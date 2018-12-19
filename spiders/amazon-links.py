@@ -5,11 +5,23 @@ class AmazonLinksSpider(scrapy.Spider):
     name = "amazon"
 
     def start_requests(self):
-        url = 'https://marginalrevolution.com/marginalrevolution/2014/04/ancient-religions-modern-politics.html/'
+        urls = ['https://marginalrevolution.com/marginalrevolution/2018/12/what-ive-been-reading-132.html',
+                'https://marginalrevolution.com/marginalrevolution/2018/11/what-ive-been-reading-131.html']
 
-        yield scrapy.Request(url=url,callback=self.parse)
+        for url in urls:
+            yield scrapy.Request(url=url,callback=self.parse)
 
     def parse(self,response):
-        for amazonlink in response.css(".entry-content").re(r'http://www.amazon.com/.*'):
-            print(re.search('.+?(?=ref=)',amazonlink).group(0))
+
+        title = response.css(".entry-title::text").extract()[0]
+
+        links = []
+        for amazonlink in response.css(".entry-content").re(r'https://www.amazon.com/.*'):
+            links.append(re.search('.+?(?=ref=)',amazonlink).group(0))
             
+        yield {
+            'url': response.request.url,
+            'title': title,
+            'links': links
+        }
+        
