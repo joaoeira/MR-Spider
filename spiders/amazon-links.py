@@ -4,12 +4,15 @@ import re
 class AmazonLinksSpider(scrapy.Spider):
     name = "amazon"
 
+    custom_settings = {
+        'DOWNLOAD_DELAY': '1.0',
+        "USER_AGENT": "*"
+    }
+    handle_httpstatus_list = [301]
     def start_requests(self):
-        urls = ['https://marginalrevolution.com/marginalrevolution/2018/12/what-ive-been-reading-132.html',
-                'https://marginalrevolution.com/marginalrevolution/2018/11/what-ive-been-reading-131.html']
+        url = 'https://marginalrevolution.com/marginalrevolution/2018/12/sunday-assorted-links-194.html'
 
-        for url in urls:
-            yield scrapy.Request(url=url,callback=self.parse)
+        yield scrapy.Request(url=url,callback=self.parse)
 
     def parse(self,response):
 
@@ -18,10 +21,16 @@ class AmazonLinksSpider(scrapy.Spider):
         links = []
         for amazonlink in response.css(".entry-content").re(r'https://www.amazon.com/.*'):
             links.append(re.search('.+?(?=ref=)',amazonlink).group(0))
-            
-        yield {
-            'url': response.request.url,
-            'title': title,
-            'links': links
-        }
-        
+
+        if links:    
+            yield {
+                'url': response.request.url,
+                'title': title,
+                'links': links
+            }
+
+        filename = 'mr-links.txt'
+        with open(filename, 'r') as f:
+            mrlinks = f.readlines()
+            for mrlink in mrlinks:
+                yield scrapy.Request(mrlink.strip(),callback=self.parse)
