@@ -5,7 +5,6 @@ class AmazonLinksSpider(scrapy.Spider):
     name = "amazon"
 
     custom_settings = {
-        'DOWNLOAD_DELAY': '1.0',
         "USER_AGENT": "*"
     }
     handle_httpstatus_list = [301]
@@ -17,20 +16,34 @@ class AmazonLinksSpider(scrapy.Spider):
     def parse(self,response):
 
         title = response.css(".entry-title::text").extract()[0]
+        date = response.css(".entry-date::text").extract()[0]
+        title_post = response.css(".entry-title::text").extract()[0]
 
         links = []
-        for amazonlink in response.css(".entry-content").re(r'https://www.amazon.com/.*'):
+        for amazonlink in response.css(".entry-content").re('https://www.amazon.com/.*'):
             links.append(re.search('.+?(?=ref=)',amazonlink).group(0))
 
         if links:    
             yield {
+                'title-post': title_post,
+                'date': date,
                 'url': response.request.url,
-                'title': title,
+                'title-book': title,
                 'links': links
             }
+        # else:
+        #     yield {
+        #         'title-post': title_post,
+        #         'date': date,
+        #         'status': "NONE"
+        #     }
 
         filename = 'mr-links.txt'
         with open(filename, 'r') as f:
             mrlinks = f.readlines()
-            for mrlink in mrlinks:
-                yield scrapy.Request(mrlink.strip(),callback=self.parse)
+        
+        index = 0
+
+        for mrlink in mrlinks:
+
+            yield scrapy.Request(mrlink.strip(),callback=self.parse)
