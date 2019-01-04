@@ -11,6 +11,11 @@ class AmazonLinksSpider(scrapy.Spider):
     def start_requests(self):
         url = 'https://marginalrevolution.com/marginalrevolution/2018/12/sunday-assorted-links-194.html'
 
+        filename_archive = 'mr-links-mined.txt'
+        archive = open(filename_archive, 'a')    
+        archive.write(url) 
+        archive.close()
+
         yield scrapy.Request(url=url,callback=self.parse)
 
     def parse(self,response):
@@ -20,8 +25,12 @@ class AmazonLinksSpider(scrapy.Spider):
         title_post = response.css(".entry-title::text").extract()[0]
 
         links = []
-        for amazonlink in response.css(".entry-content").re('https://www.amazon.com/.*'):
-            links.append(re.search('.+?(?=ref=)',amazonlink).group(0))
+        if(response.css(".entry-content").re('https://www.amazon.com/.*')):
+            for amazonlink in response.css(".entry-content").re('https://www.amazon.com/.*'):
+                links.append(re.search('.+?(?=ref=)',amazonlink).group(0))
+        elif(response.css(".entry-content").re('http://www.amazon.com/.*')):
+            for amazonlink in response.css(".entry-content").re('http://www.amazon.com/.*'):
+                links.append(re.search('.+?(?=ref=)',amazonlink).group(0))
 
         if links:    
             yield {
@@ -38,12 +47,18 @@ class AmazonLinksSpider(scrapy.Spider):
         #         'status': "NONE"
         #     }
 
-        filename = 'mr-links.txt'
-        with open(filename, 'r') as f:
+        filename_links = 'mr-links1.txt'
+        with open(filename_links, 'r') as f:
             mrlinks = f.readlines()
-        
-        index = 0
+        filename_archive = 'mr-links-mined7.txt'
+ 
+        archive = open(filename_archive, 'a')        
 
         for mrlink in mrlinks:
-
+            archive.write(mrlink)
             yield scrapy.Request(mrlink.strip(),callback=self.parse)
+        
+        with open(filename_links, 'w') as f:
+            f.close()            
+
+        
